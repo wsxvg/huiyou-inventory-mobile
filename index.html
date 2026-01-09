@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汇友机电 - 库存查看</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏪 汇友机电库存</h1>
+            <div class="last-updated" id="lastUpdated">等待数据加载...</div>
+        </header>
+
+        <!-- 密码输入界面 -->
+        <div class="password-screen" id="passwordScreen">
+            <div class="password-box">
+                <h2>🔐 请输入访问密码</h2>
+                <input type="password" id="passwordInput" placeholder="输入密码查看库存数据">
+                <button onclick="unlockData()">解锁数据</button>
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+        </div>
+
+        <!-- 主界面（解锁后显示） -->
+        <div class="main-content" id="mainContent" style="display: none;">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索商品名称或规格...">
+                <div class="search-stats" id="searchStats"></div>
+            </div>
+            
+            <div class="product-list" id="productList">
+                <div class="loading">正在加载商品数据...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
