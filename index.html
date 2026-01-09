@@ -5,18 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>汇友机电 - 库存查看</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="logo.png">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🏪 汇友机电库存</h1>
+            <div class="header-content">
+                <img src="logo.png" alt="汇友机电" class="logo">
+                <h1>汇友机电库存</h1>
+            </div>
             <div class="last-updated" id="lastUpdated">等待数据加载...</div>
         </header>
 
         <!-- 密码输入界面 -->
         <div class="password-screen" id="passwordScreen">
             <div class="password-box">
-                <h2>🔐 请输入访问密码</h2>
+                <div class="password-header">
+                    <img src="logo.png" alt="汇友机电" class="password-logo">
+                    <h2>请输入访问密码</h2>
+                </div>
                 <input type="password" id="passwordInput" placeholder="输入密码查看库存数据">
                 <button onclick="unlockData()">解锁数据</button>
                 <div class="error-message" id="errorMessage"></div>
