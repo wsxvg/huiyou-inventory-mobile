@@ -51,6 +51,16 @@ async function unlockData() {
         
         isUnlocked = true;
         
+        // 设置定期检查更新（每5分钟检查一次）
+        setInterval(async () => {
+            try {
+                await loadEncryptedData(password);
+                console.log('数据已自动更新');
+            } catch (error) {
+                console.log('自动更新失败:', error);
+            }
+        }, 5 * 60 * 1000); // 5分钟
+        
     } catch (error) {
         console.error('解锁失败:', error);
         showError('密码错误或数据加载失败');
@@ -67,7 +77,9 @@ function showError(message) {
 // 加载加密的商品数据
 async function loadEncryptedData(password) {
     try {
-        const response = await fetch('encrypted_products.json');
+        // 添加时间戳防止缓存
+        const timestamp = new Date().getTime();
+        const response = await fetch(`encrypted_products.json?t=${timestamp}`);
         if (!response.ok) {
             throw new Error('无法加载数据文件');
         }
@@ -303,6 +315,9 @@ function switchToCustomerView() {
     document.getElementById('mainViewContent').style.display = 'none';
     document.getElementById('customerProductsScreen').style.display = 'none';
     
+    // 清空商品列表（因为还没选择客户）
+    document.getElementById('productList').innerHTML = '';
+    
     // 显示客户选择界面
     showCustomerSelection();
 }
@@ -526,10 +541,15 @@ function updateSearchStats() {
 
 // 渲染商品列表
 function renderProducts() {
-    // 如果是客户专属视图，使用专门的渲染函数
+    // 如果是客户专属视图且已选择客户，使用专门的渲染函数
     if (currentView === 'customer' && currentCustomerData) {
         renderCustomerProducts(currentCustomerData.id);
         return;
+    }
+    
+    // 如果是客户专属视图但还没选择客户，不显示商品列表
+    if (currentView === 'customer' && !currentCustomerData) {
+        return; // 不渲染任何商品，因为用户还在客户选择界面
     }
     
     const container = document.getElementById('productList');
