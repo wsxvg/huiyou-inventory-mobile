@@ -2,10 +2,12 @@ let allProducts = [];
 let filteredProducts = [];
 let allCategories = [];
 let allCustomers = [];
+let filteredCustomers = []; // 新增：筛选后的客户列表
 let selectedCustomer = '';
 let isUnlocked = false;
 let currentView = 'main'; // 'main' 或 'customer'
 let currentCustomerData = null;
+let customerProductsFiltered = []; // 新增：客户专属商品的筛选结果
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
@@ -43,6 +45,7 @@ async function unlockData() {
         setupFilters();
         setupSearch();
         setupViewSwitcher();
+        setupCustomerSearch(); // 新增：设置客户搜索
         renderProducts();
         updateSearchStats();
         
@@ -85,8 +88,6 @@ async function loadEncryptedData(password) {
         allCustomers = data.customers || [];
         filteredProducts = allProducts;
         
-        updateLastUpdated(data.last_updated);
-        
     } catch (error) {
         throw new Error('密码错误或数据格式不正确');
     }
@@ -118,14 +119,142 @@ async function decryptAESData(encryptedBase64, password) {
     }
 }
 
-// 更新最后更新时间
-function updateLastUpdated(timestamp) {
-    const date = new Date(timestamp);
-    const formatted = date.toLocaleString('zh-CN');
-    document.getElementById('lastUpdated').textContent = `最后更新: ${formatted}`;
+// 设置客户搜索功能
+function setupCustomerSearch() {
+    const customerSearchInput = document.getElementById('customerSearchInput');
+    const customerProductSearchInput = document.getElementById('customerProductSearchInput');
+    let searchTimeout;
+    
+    // 客户搜索
+    customerSearchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            performCustomerSearch();
+        }, 300);
+    });
+    
+    // 客户专属商品搜索
+    customerProductSearchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            performCustomerProductFilter();
+        }, 300);
+    });
 }
 
-// 设置视图切换功能
+// 执行客户搜索
+function performCustomerSearch() {
+    const searchQuery = document.getElementById('customerSearchInput').value.trim().toLowerCase();
+    
+    if (searchQuery) {
+        filteredCustomers = allCustomers.filter(customer => 
+            customer.name.toLowerCase().includes(searchQuery)
+        );
+    } else {
+        filteredCustomers = allCustomers;
+    }
+    
+    generateCustomerButtons();
+    updateCustomerSearchStats();
+}
+
+// 更新客户搜索统计
+function updateCustomerSearchStats() {
+    const stats = document.getElementById('customerSearchStats');
+    const total = allCustomers.length;
+    const showing = filteredCustomers.length;
+    
+    if (showing === total) {
+        stats.textContent = `共 ${total} 个客户`;
+    } else {
+        stats.textContent = `显示 ${showing} / ${total} 个客户`;
+    }
+}
+
+// 设置客户专属商品的筛选功能
+function setupCustomerProductFilters() {
+    // 填充分类选项（只包含该客户专属商品的分类）
+    const categoryFilter = document.getElementById('customerCategoryFilter');
+    categoryFilter.innerHTML = '<option value="">全部分类</option>';
+    
+    const customerCategories = [...new Set(customerProductsFiltered.map(product => product.category_name))];
+    customerCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+    });
+
+    // 监听筛选变化
+    categoryFilter.addEventListener('change', performCustomerProductFilter);
+    document.getElementById('customerStockFilter').addEventListener('change', performCustomerProductFilter);
+}
+
+// 执行客户专属商品筛选
+function performCustomerProductFilter() {
+    if (!currentCustomerData) return;
+    
+    const category = document.getElementById('customerCategoryFilter').value;
+    const stockStatus = document.getElementById('customerStockFilter').value;
+    const searchQuery = document.getElementById('customerProductSearchInput').value.trim().toLowerCase();
+    
+    // 获取该客户的所有专属商品
+    const customerProducts = allProducts.filter(product => 
+        product.customer_prices && 
+        product.customer_prices.some(cp => cp.customer_id === currentCustomerData.id)
+    );
+    
+    // 应用筛选条件
+    customerProductsFiltered = customerProducts.filter(product => {
+        // 分类筛选
+        if (category && product.category_name !== category) {
+            return false;
+        }
+        
+        // 库存状态筛选
+        if (stockStatus) {
+            const totalStock = product.main_stock + product.warehouse_a_stock + product.warehouse_b_stock;
+            switch(stockStatus) {
+                case 'instock':
+                    if (totalStock <= 0) return false;
+                    break;
+                case 'lowstock':
+                    if (totalStock > 10 || totalStock <= 0) return false;
+                    break;
+                case 'outstock':
+                    if (totalStock > 0) return false;
+                    break;
+            }
+        }
+        
+        // 文本搜索
+        if (searchQuery) {
+            return product.name.toLowerCase().includes(searchQuery) ||
+                   (product.specification && product.specification.toLowerCase().includes(searchQuery));
+        }
+        
+        return true;
+    });
+    
+    renderCustomerProducts(currentCustomerData.id);
+    updateCustomerProductSearchStats();
+}
+
+// 更新客户专属商品搜索统计
+function updateCustomerProductSearchStats() {
+    const stats = document.getElementById('customerProductSearchStats');
+    const total = allProducts.filter(product => 
+        product.customer_prices && 
+        product.customer_prices.some(cp => cp.customer_id === currentCustomerData.id)
+    ).length;
+    const showing = customerProductsFiltered.length;
+    
+    if (showing === total) {
+        stats.textContent = `共 ${total} 个专属商品`;
+    } else {
+        stats.textContent = `显示 ${showing} / ${total} 个专属商品`;
+    }
+}
 function setupViewSwitcher() {
     const mainViewBtn = document.getElementById('mainViewBtn');
     const customerViewBtn = document.getElementById('customerViewBtn');
@@ -183,15 +312,20 @@ function showCustomerSelection() {
     document.getElementById('customerSelectionScreen').style.display = 'block';
     document.getElementById('customerProductsScreen').style.display = 'none';
     
-    // 生成客户按钮
+    // 初始化客户列表
+    filteredCustomers = allCustomers;
     generateCustomerButtons();
+    updateCustomerSearchStats();
+    
+    // 清空搜索框
+    document.getElementById('customerSearchInput').value = '';
 }
 
 // 生成客户按钮
 function generateCustomerButtons() {
     const container = document.getElementById('customerButtons');
     
-    const buttonsHtml = allCustomers.map(customer => {
+    const buttonsHtml = filteredCustomers.map(customer => {
         // 计算该客户的专属商品数量
         const customerProductCount = allProducts.filter(product => 
             product.customer_prices && 
@@ -200,8 +334,11 @@ function generateCustomerButtons() {
         
         return `
             <button class="customer-btn" onclick="selectCustomerForView('${customer.id}', '${customer.name}')">
-                ${customer.name}
-                <div class="customer-count">${customerProductCount} 个专属商品</div>
+                <div>
+                    <div class="customer-btn-name">${customer.name}</div>
+                    <div class="customer-btn-info">${customerProductCount} 个专属商品</div>
+                </div>
+                <div class="customer-btn-arrow">></div>
             </button>
         `;
     }).join('');
@@ -213,8 +350,8 @@ function generateCustomerButtons() {
 function selectCustomerForView(customerId, customerName) {
     currentCustomerData = { id: customerId, name: customerName };
     
-    // 筛选该客户的专属商品
-    filteredProducts = allProducts.filter(product => 
+    // 获取该客户的专属商品
+    customerProductsFiltered = allProducts.filter(product => 
         product.customer_prices && 
         product.customer_prices.some(cp => cp.customer_id === customerId)
     );
@@ -224,20 +361,29 @@ function selectCustomerForView(customerId, customerName) {
     document.getElementById('customerProductsScreen').style.display = 'block';
     document.getElementById('currentCustomerName').textContent = `${customerName} 专属商品`;
     
+    // 设置筛选功能
+    setupCustomerProductFilters();
+    
     // 渲染专属商品
     renderCustomerProducts(customerId);
+    updateCustomerProductSearchStats();
+    
+    // 清空搜索和筛选
+    document.getElementById('customerProductSearchInput').value = '';
+    document.getElementById('customerCategoryFilter').value = '';
+    document.getElementById('customerStockFilter').value = '';
 }
 
 // 渲染客户专属商品
 function renderCustomerProducts(customerId) {
     const container = document.getElementById('productList');
     
-    if (filteredProducts.length === 0) {
-        container.innerHTML = '<div class="no-results">该客户暂无专属商品</div>';
+    if (customerProductsFiltered.length === 0) {
+        container.innerHTML = '<div class="no-results">没有找到匹配的专属商品</div>';
         return;
     }
     
-    const html = filteredProducts.map(product => {
+    const html = customerProductsFiltered.map(product => {
         const customerPricing = product.customer_prices.find(cp => cp.customer_id === customerId);
         const customerPrice = customerPricing.price;
         const savings = product.sell_price - customerPrice;
@@ -248,7 +394,7 @@ function renderCustomerProducts(customerId) {
             ${product.specification ? `<div class="product-spec">${product.specification}</div>` : ''}
             
             <div class="customer-price-highlight">
-                <div class="price-label">您的专属价格</div>
+                <div class="price-label">${currentCustomerData.name}的价格</div>
                 <div class="price-value">¥${customerPrice.toFixed(2)}</div>
             </div>
             
