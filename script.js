@@ -464,8 +464,10 @@ function setupFilters() {
         selectedCustomer = this.value;
         const selectedCustomerName = this.options[this.selectedIndex].text;
         
-        // 更新价格显示
-        renderProducts();
+        // 只在主页面视图时更新价格显示
+        if (currentView === 'main') {
+            renderProducts();
+        }
         
         // 可选：显示当前选择的客户
         console.log('选择客户:', selectedCustomerName);
@@ -522,8 +524,11 @@ function performCombinedFilter() {
         return true;
     });
     
-    renderProducts();
-    updateSearchStats();
+    // 只在主页面视图时渲染商品
+    if (currentView === 'main') {
+        renderProducts();
+        updateSearchStats();
+    }
 }
 
 // 更新搜索统计
@@ -541,17 +546,23 @@ function updateSearchStats() {
 
 // 渲染商品列表
 function renderProducts() {
+    console.log('renderProducts调用 - currentView:', currentView, 'currentCustomerData:', currentCustomerData);
+    
     // 如果是客户专属视图且已选择客户，使用专门的渲染函数
     if (currentView === 'customer' && currentCustomerData) {
+        console.log('渲染客户专属商品');
         renderCustomerProducts(currentCustomerData.id);
         return;
     }
     
     // 如果是客户专属视图但还没选择客户，不显示商品列表
     if (currentView === 'customer' && !currentCustomerData) {
+        console.log('客户专属视图 - 清空商品列表');
+        document.getElementById('productList').innerHTML = '';
         return; // 不渲染任何商品，因为用户还在客户选择界面
     }
     
+    console.log('渲染主页面商品');
     const container = document.getElementById('productList');
     
     if (filteredProducts.length === 0) {
