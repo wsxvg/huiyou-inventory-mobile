@@ -32,12 +32,39 @@
 
         <!-- 主界面（解锁后显示） -->
         <div class="main-content" id="mainContent" style="display: none;">
-            <!-- 客户选择器 -->
-            <div class="customer-selector">
-                <select id="customerSelect">
-                    <option value="">通用价格</option>
-                </select>
+            <!-- 视图模式切换 -->
+            <div class="view-switcher">
+                <button id="mainViewBtn" class="view-btn active">主页面</button>
+                <button id="customerViewBtn" class="view-btn">查询指定客户</button>
             </div>
+
+            <!-- 客户选择界面（查询指定客户模式） -->
+            <div class="customer-selection-screen" id="customerSelectionScreen" style="display: none;">
+                <div class="customer-selection-title">选择客户查看专属价格</div>
+                <div class="customer-buttons" id="customerButtons">
+                    <!-- 客户按钮将通过JS动态生成 -->
+                </div>
+            </div>
+
+            <!-- 客户专属商品界面 -->
+            <div class="customer-products-screen" id="customerProductsScreen" style="display: none;">
+                <div class="customer-header">
+                    <div class="customer-name" id="currentCustomerName"></div>
+                    <div class="customer-actions">
+                        <button id="backToCustomerSelect" class="action-btn">返回选客户</button>
+                        <button id="switchCustomer" class="action-btn">切换客户</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主页面内容 -->
+            <div class="main-view-content" id="mainViewContent">
+                <!-- 客户选择器（主页面模式） -->
+                <div class="customer-selector">
+                    <select id="customerSelect">
+                        <option value="">通用价格</option>
+                    </select>
+                </div>
 
             <!-- 筛选区域 -->
             <div class="filter-section">
@@ -61,6 +88,7 @@
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="在已筛选结果中搜索...">
                 <div class="search-stats" id="searchStats"></div>
+            </div>
             </div>
             
             <div class="product-list" id="productList">
