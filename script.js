@@ -1,5 +1,8 @@
 let allProducts = [];
 let filteredProducts = [];
+let allCategories = [];
+let allCustomers = [];
+let selectedCustomer = '';
 let isUnlocked = false;
 
 // 页面加载完成后初始化
@@ -35,6 +38,7 @@ async function unlockData() {
         document.getElementById('mainContent').style.display = 'block';
         
         // 初始化主界面
+        setupFilters();
         setupSearch();
         renderProducts();
         updateSearchStats();
@@ -74,6 +78,8 @@ async function loadEncryptedData(password) {
         const data = JSON.parse(decryptedText);
         
         allProducts = data.products;
+        allCategories = data.categories || [];
+        allCustomers = data.customers || [];
         filteredProducts = allProducts;
         
         updateLastUpdated(data.last_updated);
@@ -83,7 +89,7 @@ async function loadEncryptedData(password) {
     }
 }
 
-// 解密 AES 数据（兼容 Python 加密）
+// 解密 AES 数据（兼容 Python AES 加密）
 async function decryptAESData(encryptedBase64, password) {
     try {
         // Base64 解码
@@ -116,6 +122,41 @@ function updateLastUpdated(timestamp) {
     document.getElementById('lastUpdated').textContent = `最后更新: ${formatted}`;
 }
 
+// 设置筛选功能
+function setupFilters() {
+    // 填充分类选项
+    const categoryFilter = document.getElementById('categoryFilter');
+    allCategories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+    });
+
+    // 填充客户选项
+    const customerSelect = document.getElementById('customerSelect');
+    allCustomers.forEach(customer => {
+        const option = document.createElement('option');
+        option.value = customer.id;
+        option.textContent = customer.name;
+        customerSelect.appendChild(option);
+    });
+
+    // 监听筛选变化
+    categoryFilter.addEventListener('change', performCombinedFilter);
+    document.getElementById('stockFilter').addEventListener('change', performCombinedFilter);
+    customerSelect.addEventListener('change', function() {
+        selectedCustomer = this.value;
+        const selectedCustomerName = this.options[this.selectedIndex].text;
+        
+        // 更新价格显示
+        renderProducts();
+        
+        // 可选：显示当前选择的客户
+        console.log('选择客户:', selectedCustomerName);
+    });
+}
+
 // 设置搜索功能
 function setupSearch() {
     const searchInput = document.getElementById('searchInput');
@@ -124,23 +165,47 @@ function setupSearch() {
     searchInput.addEventListener('input', function() {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
-            performSearch(this.value.trim());
+            performCombinedFilter();
         }, 300);
     });
 }
 
-// 执行搜索
-function performSearch(query) {
-    if (!query) {
-        filteredProducts = allProducts;
-    } else {
-        const lowerQuery = query.toLowerCase();
-        filteredProducts = allProducts.filter(product =>
-            product.name.toLowerCase().includes(lowerQuery) ||
-            (product.specification && product.specification.toLowerCase().includes(lowerQuery)) ||
-            product.category_name.toLowerCase().includes(lowerQuery)
-        );
-    }
+// 执行组合筛选
+function performCombinedFilter() {
+    const category = document.getElementById('categoryFilter').value;
+    const stockStatus = document.getElementById('stockFilter').value;
+    const searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+    
+    filteredProducts = allProducts.filter(product => {
+        // 分类筛选
+        if (category && product.category_name !== category) {
+            return false;
+        }
+        
+        // 库存状态筛选
+        if (stockStatus) {
+            const totalStock = product.main_stock + product.warehouse_a_stock + product.warehouse_b_stock;
+            switch(stockStatus) {
+                case 'instock':
+                    if (totalStock <= 0) return false;
+                    break;
+                case 'lowstock':
+                    if (totalStock > 10 || totalStock <= 0) return false; // 假设10以下为库存不足
+                    break;
+                case 'outstock':
+                    if (totalStock > 0) return false;
+                    break;
+            }
+        }
+        
+        // 文本搜索
+        if (searchQuery) {
+            return product.name.toLowerCase().includes(searchQuery) ||
+                   (product.specification && product.specification.toLowerCase().includes(searchQuery));
+        }
+        
+        return true;
+    });
     
     renderProducts();
     updateSearchStats();
@@ -168,7 +233,12 @@ function renderProducts() {
         return;
     }
     
-    const html = filteredProducts.map(product => `
+    const html = filteredProducts.map(product => {
+        // 获取客户价格
+        const customerPrice = getCustomerPrice(product);
+        const hasCustomerPrice = customerPrice !== null;
+        
+        return `
         <div class="product-card">
             <div class="product-name">${product.name}</div>
             ${product.specification ? `<div class="product-spec">${product.specification}</div>` : ''}
@@ -206,12 +276,31 @@ function renderProducts() {
                     <div class="price-value">¥${product.current_cost_price.toFixed(2)}</div>
                 </div>
                 <div class="price-item sell-price">
-                    <div class="price-label">售价</div>
+                    <div class="price-label">
+                        ${hasCustomerPrice ? '通用售价' : '售价'}
+                    </div>
                     <div class="price-value">¥${product.sell_price.toFixed(2)}</div>
                 </div>
+                ${hasCustomerPrice ? `
+                <div class="price-item customer-price">
+                    <div class="price-label">客户价格</div>
+                    <div class="price-value">¥${customerPrice.toFixed(2)}</div>
+                </div>
+                ` : ''}
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
     
     container.innerHTML = html;
+}
+
+// 获取客户价格
+function getCustomerPrice(product) {
+    if (!selectedCustomer || !product.customer_prices) {
+        return null;
+    }
+    
+    const customerPricing = product.customer_prices.find(cp => cp.customer_id === selectedCustomer);
+    return customerPricing ? customerPricing.price : null;
 }
