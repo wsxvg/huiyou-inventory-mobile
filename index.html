@@ -14,7 +14,6 @@
                 <img src="logo.png" alt="汇友机电" class="logo">
                 <h1>汇友机电库存</h1>
             </div>
-            <div class="last-updated" id="lastUpdated">等待数据加载...</div>
         </header>
 
         <!-- 密码输入界面 -->
@@ -40,7 +39,14 @@
 
             <!-- 客户选择界面（查询指定客户模式） -->
             <div class="customer-selection-screen" id="customerSelectionScreen" style="display: none;">
-                <div class="customer-selection-title">选择客户查看专属价格</div>
+                <div class="customer-selection-title">查询客户专属价格</div>
+                
+                <!-- 客户搜索 -->
+                <div class="customer-search-box">
+                    <input type="text" id="customerSearchInput" placeholder="🔍 搜索客户名称...">
+                    <div class="customer-search-stats" id="customerSearchStats"></div>
+                </div>
+                
                 <div class="customer-buttons" id="customerButtons">
                     <!-- 客户按钮将通过JS动态生成 -->
                 </div>
@@ -51,9 +57,34 @@
                 <div class="customer-header">
                     <div class="customer-name" id="currentCustomerName"></div>
                     <div class="customer-actions">
-                        <button id="backToCustomerSelect" class="action-btn">返回选客户</button>
+                        <button id="backToCustomerSelect" class="action-btn">← 返回客户选择</button>
                         <button id="switchCustomer" class="action-btn">切换客户</button>
                     </div>
+                </div>
+                
+                <!-- 客户专属商品的筛选区域 -->
+                <div class="customer-filter-section">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <select id="customerCategoryFilter">
+                                <option value="">全部分类</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <select id="customerStockFilter">
+                                <option value="">全部状态</option>
+                                <option value="instock">有库存</option>
+                                <option value="lowstock">库存不足</option>
+                                <option value="outstock">缺货</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 客户专属商品的搜索 -->
+                <div class="customer-search-box">
+                    <input type="text" id="customerProductSearchInput" placeholder="🔍 搜索商品名称或规格...">
+                    <div class="customer-search-stats" id="customerProductSearchStats"></div>
                 </div>
             </div>
 
