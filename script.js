@@ -1,3 +1,58 @@
+// 客户头像工具函数
+const customerAvatarUtils = {
+    // 获取客户首字母
+    getInitial(name) {
+        if (!name) return '?';
+        // 中文取第一个字，英文取第一个字母
+        return name.charAt(0).toUpperCase();
+    },
+    
+    // 生成固定颜色
+    getColor(name) {
+        const colors = [
+            '#1e3a8a', '#3b82f6', '#059669', '#10b981',
+            '#d97706', '#f59e0b', '#dc2626', '#ef4444',
+            '#7c3aed', '#8b5cf6', '#0891b2', '#06b6d4'
+        ];
+        
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return colors[Math.abs(hash) % colors.length];
+    },
+    
+    // 判断是否为重要客户
+    isVipCustomer(customer) {
+        return customer.productCount > 10;
+    }
+};
+
+// 库存状态工具函数
+const stockStatusUtils = {
+    // 获取库存状态
+    getStockStatus(totalStock) {
+        if (totalStock <= 0) return 'out';
+        if (totalStock <= 10) return 'low';
+        return 'good';
+    },
+    
+    // 获取状态文本
+    getStatusText(status) {
+        const statusMap = {
+            'good': '库存充足',
+            'low': '库存不足',
+            'out': '缺货'
+        };
+        return statusMap[status] || '未知';
+    },
+    
+    // 获取状态类名
+    getStatusClass(status) {
+        return `stock-${status}`;
+    }
+};
+
 let allProducts = [];
 let filteredProducts = [];
 let allCategories = [];
@@ -347,13 +402,24 @@ function generateCustomerButtons() {
             product.customer_prices.some(cp => cp.customer_id === customer.id)
         ).length;
         
+        // 生成客户头像
+        const initial = customerAvatarUtils.getInitial(customer.name);
+        const avatarColor = customerAvatarUtils.getColor(customer.name);
+        const isVip = customerAvatarUtils.isVipCustomer({ productCount: customerProductCount });
+        
         return `
             <button class="customer-btn" onclick="selectCustomerForView('${customer.id}', '${customer.name}')">
-                <div>
-                    <div class="customer-btn-name">${customer.name}</div>
-                    <div class="customer-btn-info">${customerProductCount} 个专属商品</div>
+                <div class="customer-btn-content">
+                    <div class="customer-avatar ${isVip ? 'vip-customer' : ''}" 
+                         style="background-color: ${avatarColor}">
+                        ${initial}
+                    </div>
+                    <div class="customer-info">
+                        <div class="customer-btn-name">${customer.name}</div>
+                        <div class="customer-btn-info">${customerProductCount} 个专属商品</div>
+                    </div>
                 </div>
-                <div class="customer-btn-arrow">></div>
+                <div class="customer-btn-arrow">›</div>
             </button>
         `;
     }).join('');
@@ -403,8 +469,13 @@ function renderCustomerProducts(customerId) {
         const customerPrice = customerPricing.price;
         const savings = product.sell_price - customerPrice;
         
+        // 计算总库存和状态
+        const totalStock = product.main_stock + product.warehouse_a_stock + product.warehouse_b_stock;
+        const stockStatus = stockStatusUtils.getStockStatus(totalStock);
+        const stockStatusClass = stockStatusUtils.getStatusClass(stockStatus);
+        
         return `
-        <div class="customer-product-card">
+        <div class="customer-product-card ${stockStatusClass}">
             <div class="product-name">${product.name}</div>
             ${product.specification ? `<div class="product-spec">${product.specification}</div>` : ''}
             
@@ -429,7 +500,11 @@ function renderCustomerProducts(customerId) {
                 </div>
                 <div class="info-item">
                     <span class="info-label">总库存</span>
-                    <span class="info-value">${product.main_stock + product.warehouse_a_stock + product.warehouse_b_stock}</span>
+                    <span class="info-value ${stockStatusClass}">${totalStock}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">库存状态</span>
+                    <span class="info-value ${stockStatusClass}">${stockStatusUtils.getStatusText(stockStatus)}</span>
                 </div>
             </div>
         </div>
@@ -548,18 +623,10 @@ function updateSearchStats() {
 function renderProducts() {
     console.log('renderProducts调用 - currentView:', currentView, 'currentCustomerData:', currentCustomerData);
     
-    // 如果是客户专属视图且已选择客户，使用专门的渲染函数
-    if (currentView === 'customer' && currentCustomerData) {
-        console.log('渲染客户专属商品');
-        renderCustomerProducts(currentCustomerData.id);
-        return;
-    }
-    
-    // 如果是客户专属视图但还没选择客户，不显示商品列表
-    if (currentView === 'customer' && !currentCustomerData) {
-        console.log('客户专属视图 - 清空商品列表');
-        document.getElementById('productList').innerHTML = '';
-        return; // 不渲染任何商品，因为用户还在客户选择界面
+    // 如果是客户专属视图，不在这里渲染商品
+    if (currentView === 'customer') {
+        console.log('客户专属视图 - 不在此处渲染商品');
+        return; // 客户专属视图有自己的渲染逻辑
     }
     
     console.log('渲染主页面商品');
@@ -575,8 +642,13 @@ function renderProducts() {
         const customerPrice = getCustomerPrice(product);
         const hasCustomerPrice = customerPrice !== null;
         
+        // 计算总库存和状态
+        const totalStock = product.main_stock + product.warehouse_a_stock + product.warehouse_b_stock;
+        const stockStatus = stockStatusUtils.getStockStatus(totalStock);
+        const stockStatusClass = stockStatusUtils.getStatusClass(stockStatus);
+        
         return `
-        <div class="product-card">
+        <div class="product-card ${stockStatusClass}">
             <div class="product-name">${product.name}</div>
             ${product.specification ? `<div class="product-spec">${product.specification}</div>` : ''}
             
@@ -591,23 +663,23 @@ function renderProducts() {
                 </div>
                 <div class="info-item">
                     <span class="info-label">门店库存</span>
-                    <span class="info-value">${product.main_stock}</span>
+                    <span class="info-value ${stockStatusUtils.getStatusClass(stockStatusUtils.getStockStatus(product.main_stock))}">${product.main_stock}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">仓库A</span>
-                    <span class="info-value">${product.warehouse_a_stock}</span>
+                    <span class="info-value ${stockStatusUtils.getStatusClass(stockStatusUtils.getStockStatus(product.warehouse_a_stock))}">${product.warehouse_a_stock}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">仓库B</span>
-                    <span class="info-value">${product.warehouse_b_stock}</span>
+                    <span class="info-value ${stockStatusUtils.getStatusClass(stockStatusUtils.getStockStatus(product.warehouse_b_stock))}">${product.warehouse_b_stock}</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">总库存</span>
-                    <span class="info-value">${product.main_stock + product.warehouse_a_stock + product.warehouse_b_stock}</span>
+                    <span class="info-value ${stockStatusClass}">${totalStock}</span>
                 </div>
             </div>
             
-            <div class="price-info">
+            <div class="price-info ${hasCustomerPrice ? 'has-customer-price' : ''}">
                 <div class="price-item cost-price">
                     <div class="price-label">进价</div>
                     <div class="price-value">¥${product.current_cost_price.toFixed(2)}</div>
