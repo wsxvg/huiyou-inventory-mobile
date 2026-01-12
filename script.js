@@ -112,13 +112,19 @@ async function unlockData() {
                 await loadEncryptedData(password);
                 console.log('数据已自动更新');
             } catch (error) {
-                console.log('自动更新失败:', error);
+                console.log('自动更新失败（可能是离线状态）:', error.message);
             }
         }, 5 * 60 * 1000); // 5分钟
         
     } catch (error) {
         console.error('解锁失败:', error);
-        showError('密码错误或数据加载失败');
+        if (error.message.includes('密码错误')) {
+            showError('密码错误，请重新输入');
+        } else if (error.message.includes('数据加载失败')) {
+            showError('数据加载失败，请检查网络连接或稍后重试');
+        } else {
+            showError('登录失败: ' + error.message);
+        }
     }
 }
 
@@ -132,14 +138,34 @@ function showError(message) {
 // 加载加密的商品数据
 async function loadEncryptedData(password) {
     try {
-        // 添加时间戳防止缓存
-        const timestamp = new Date().getTime();
-        const response = await fetch(`encrypted_products.json?t=${timestamp}`);
-        if (!response.ok) {
-            throw new Error('无法加载数据文件');
-        }
+        let response;
+        let encryptedData;
         
-        const encryptedData = await response.text();
+        try {
+            // 首先尝试从网络获取最新数据（带时间戳）
+            const timestamp = new Date().getTime();
+            response = await fetch(`encrypted_products.json?t=${timestamp}`);
+            if (!response.ok) {
+                throw new Error('网络请求失败');
+            }
+            encryptedData = await response.text();
+            console.log('从网络加载数据成功');
+        } catch (networkError) {
+            console.log('网络加载失败，尝试从缓存加载:', networkError.message);
+            
+            // 网络失败，尝试从缓存获取（不带时间戳）
+            try {
+                response = await fetch('encrypted_products.json');
+                if (!response.ok) {
+                    throw new Error('缓存请求失败');
+                }
+                encryptedData = await response.text();
+                console.log('从缓存加载数据成功');
+            } catch (cacheError) {
+                console.error('缓存加载也失败:', cacheError.message);
+                throw new Error('无法加载数据文件，请检查网络连接');
+            }
+        }
         
         // 解密数据 - 兼容 Python AES 加密
         const decryptedText = await decryptAESData(encryptedData.trim(), password);
@@ -155,14 +181,23 @@ async function loadEncryptedData(password) {
         allCustomers = data.customers || [];
         filteredProducts = allProducts;
         
+        console.log('数据解密和加载完成');
+        
     } catch (error) {
-        throw new Error('密码错误或数据格式不正确');
+        console.error('loadEncryptedData 错误:', error);
+        if (error.message.includes('密码错误') || error.message.includes('解密失败')) {
+            throw new Error('密码错误');
+        } else {
+            throw new Error('数据加载失败: ' + error.message);
+        }
     }
 }
 
 // 解密 AES 数据（兼容 Python AES 加密）
 async function decryptAESData(encryptedBase64, password) {
     try {
+        console.log('开始解密数据，数据长度:', encryptedBase64.length);
+        
         // Base64 解码
         const encryptedBytes = CryptoJS.enc.Base64.parse(encryptedBase64);
         
@@ -180,8 +215,16 @@ async function decryptAESData(encryptedBase64, password) {
             { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
         );
         
-        return decrypted.toString(CryptoJS.enc.Utf8);
+        const result = decrypted.toString(CryptoJS.enc.Utf8);
+        console.log('解密完成，结果长度:', result.length);
+        
+        if (!result || result.length === 0) {
+            throw new Error('解密结果为空，可能是密码错误');
+        }
+        
+        return result;
     } catch (error) {
+        console.error('解密过程出错:', error);
         throw new Error('解密失败');
     }
 }
