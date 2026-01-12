@@ -1,4 +1,4 @@
-const CACHE_NAME = 'huiyou-inventory-v4';
+const CACHE_NAME = 'huiyou-inventory-v5';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -15,18 +15,18 @@ self.addEventListener('install', function(event) {
       .then(function(cache) {
         // 分别缓存静态文件和数据文件
         const staticFiles = [
-          '/',
-          '/index.html',
-          '/style.css',
-          '/script.js',
-          '/logo.png',
-          '/manifest.json'
+          './',
+          './index.html',
+          './style.css',
+          './script.js',
+          './logo.png',
+          './manifest.json'
         ];
         
         return cache.addAll(staticFiles)
           .then(function() {
             // 单独尝试缓存数据文件
-            return fetch('/encrypted_products.json')
+            return fetch('./encrypted_products.json')
               .then(function(response) {
                 if (response.ok) {
                   return cache.put('/encrypted_products.json', response);
@@ -91,7 +91,7 @@ self.addEventListener('fetch', function(event) {
               }
               // 如果缓存也没有，尝试匹配原始文件名
               console.log('Service Worker: 尝试匹配原始文件名');
-              return caches.match('/encrypted_products.json')
+              return caches.match('./encrypted_products.json')
                 .then(function(fallbackResponse) {
                   if (fallbackResponse) {
                     console.log('Service Worker: 从原始文件名缓存返回');
