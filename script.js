@@ -154,42 +154,51 @@ function showError(message) {
 // 加载加密的商品数据
 async function loadEncryptedData(password) {
     try {
-        let response;
         let encryptedData;
+        let dataSource = 'unknown';
         
+        // 优先尝试从缓存加载（离线友好）
         try {
-            // 首先尝试从网络获取最新数据（带时间戳）
-            const timestamp = new Date().getTime();
-            console.log('尝试从网络加载数据，URL:', `encrypted_products.json?t=${timestamp}`);
-            response = await fetch(`encrypted_products.json?t=${timestamp}`);
-            if (!response.ok) {
-                throw new Error(`网络请求失败，状态码: ${response.status}`);
-            }
-            encryptedData = await response.text();
-            console.log('从网络加载数据成功，数据长度:', encryptedData.length);
-        } catch (networkError) {
-            console.log('网络加载失败，尝试从缓存加载:', networkError.message);
+            console.log('尝试从缓存加载数据...');
+            const cacheResponse = await fetch('encrypted_products.json', {
+                cache: 'force-cache'
+            });
             
-            // 网络失败，尝试从缓存获取（不带时间戳）
-            try {
-                console.log('尝试从缓存加载数据，URL: encrypted_products.json');
-                response = await fetch('encrypted_products.json');
-                if (!response.ok) {
-                    throw new Error(`缓存请求失败，状态码: ${response.status}`);
-                }
-                encryptedData = await response.text();
+            if (cacheResponse.ok) {
+                encryptedData = await cacheResponse.text();
+                dataSource = 'cache';
                 console.log('从缓存加载数据成功，数据长度:', encryptedData.length);
+            } else {
+                throw new Error('缓存响应失败');
+            }
+        } catch (cacheError) {
+            console.log('缓存加载失败，尝试网络请求:', cacheError.message);
+            
+            // 缓存失败，尝试网络请求
+            try {
+                const timestamp = new Date().getTime();
+                console.log('尝试从网络加载数据，URL:', `encrypted_products.json?t=${timestamp}`);
+                const networkResponse = await fetch(`encrypted_products.json?t=${timestamp}`);
                 
-                // 检查缓存数据是否有效
-                if (!encryptedData || encryptedData.length === 0) {
-                    throw new Error('缓存数据为空');
+                if (!networkResponse.ok) {
+                    throw new Error(`网络请求失败，状态码: ${networkResponse.status}`);
                 }
                 
-            } catch (cacheError) {
-                console.error('缓存加载也失败:', cacheError.message);
+                encryptedData = await networkResponse.text();
+                dataSource = 'network';
+                console.log('从网络加载数据成功，数据长度:', encryptedData.length);
+            } catch (networkError) {
+                console.error('网络请求也失败:', networkError.message);
                 throw new Error('无法加载数据文件，请检查网络连接');
             }
         }
+        
+        // 验证数据
+        if (!encryptedData || encryptedData.length === 0) {
+            throw new Error('加载的数据为空');
+        }
+        
+        console.log(`数据来源: ${dataSource}`);
         
         // 解密数据 - 兼容 Python AES 加密
         const decryptedText = await decryptAESData(encryptedData.trim(), password);
@@ -205,7 +214,7 @@ async function loadEncryptedData(password) {
         allCustomers = data.customers || [];
         filteredProducts = allProducts;
         
-        console.log('数据解密和加载完成');
+        console.log('数据解密和加载完成，商品数量:', allProducts.length);
         
     } catch (error) {
         console.error('loadEncryptedData 错误:', error);
