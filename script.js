@@ -89,6 +89,22 @@ async function unlockData() {
         errorElement.textContent = '正在验证密码...';
         errorElement.style.color = '#666';
         
+        // 检查Service Worker和缓存状态
+        if ('serviceWorker' in navigator && 'caches' in window) {
+            try {
+                const cacheNames = await caches.keys();
+                console.log('可用的缓存:', cacheNames);
+                
+                for (const cacheName of cacheNames) {
+                    const cache = await caches.open(cacheName);
+                    const cachedRequests = await cache.keys();
+                    console.log(`缓存 ${cacheName} 中的文件:`, cachedRequests.map(req => req.url));
+                }
+            } catch (e) {
+                console.log('缓存检查失败:', e);
+            }
+        }
+        
         // 尝试加载和解密数据
         await loadEncryptedData(password);
         
@@ -144,23 +160,31 @@ async function loadEncryptedData(password) {
         try {
             // 首先尝试从网络获取最新数据（带时间戳）
             const timestamp = new Date().getTime();
+            console.log('尝试从网络加载数据，URL:', `encrypted_products.json?t=${timestamp}`);
             response = await fetch(`encrypted_products.json?t=${timestamp}`);
             if (!response.ok) {
-                throw new Error('网络请求失败');
+                throw new Error(`网络请求失败，状态码: ${response.status}`);
             }
             encryptedData = await response.text();
-            console.log('从网络加载数据成功');
+            console.log('从网络加载数据成功，数据长度:', encryptedData.length);
         } catch (networkError) {
             console.log('网络加载失败，尝试从缓存加载:', networkError.message);
             
             // 网络失败，尝试从缓存获取（不带时间戳）
             try {
+                console.log('尝试从缓存加载数据，URL: encrypted_products.json');
                 response = await fetch('encrypted_products.json');
                 if (!response.ok) {
-                    throw new Error('缓存请求失败');
+                    throw new Error(`缓存请求失败，状态码: ${response.status}`);
                 }
                 encryptedData = await response.text();
-                console.log('从缓存加载数据成功');
+                console.log('从缓存加载数据成功，数据长度:', encryptedData.length);
+                
+                // 检查缓存数据是否有效
+                if (!encryptedData || encryptedData.length === 0) {
+                    throw new Error('缓存数据为空');
+                }
+                
             } catch (cacheError) {
                 console.error('缓存加载也失败:', cacheError.message);
                 throw new Error('无法加载数据文件，请检查网络连接');
