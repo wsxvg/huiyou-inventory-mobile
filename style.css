@@ -680,6 +680,29 @@ header h1 {
     height: 14px;
 }
 
+/* 访客价格说明 - 红色醒目 */
+.guest-price-notice {
+    display: inline-block;
+    margin-left: 12px;
+    padding: 4px 12px;
+    background: var(--danger-color);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    letter-spacing: 0.5px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.85;
+    }
+}
+
 /* 访客搜索区域 */
 .guest-search-section {
     padding: 0 24px;
