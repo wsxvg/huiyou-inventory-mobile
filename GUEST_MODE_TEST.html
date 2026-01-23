@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>访客模式测试 - 汇友机电</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 访客模式界面（直接显示用于测试） -->
+        <div class="guest-mode-container" id="guestMode">
+            <!-- 访客模式头部 -->
+            <header class="guest-header">
+                <div class="guest-header-content">
+                    <img src="logo.png" alt="汇友机电" class="logo" onerror="this.style.display='none'">
+                    <div>
+                        <h1>汇友机电</h1>
+                        <span class="guest-badge">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            访客模式
+                        </span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 搜索区域 -->
+            <div class="guest-search-section">
+                <div class="search-input-wrapper">
+                    <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input type="text" class="guest-search-input" id="guestSearchInput" placeholder="搜索商品名称或规格...">
+                </div>
+            </div>
+
+            <!-- 分类筛选 -->
+            <div class="guest-filter-section">
+                <select class="category-filter" id="guestCategoryFilter">
+                    <option value="">全部分类</option>
+                    <option value="断路器">断路器</option>
+                    <option value="接触器">接触器</option>
+                    <option value="继电器">继电器</option>
+                    <option value="开关">开关</option>
+                </select>
+            </div>
+
+            <!-- 统计信息 -->
+            <div class="guest-stats">
+                <div class="stats-title">商品列表</div>
+                <div class="stats-count" id="guestStatsCount">共 10 件商品</div>
+            </div>
+
+            <!-- 商品列表 -->
+            <div class="guest-product-list" id="guestProductList">
+                <div class="guest-product-card">
+                    <div class="guest-product-name">西门子断路器 3UA</div>
+                    <div class="guest-product-spec">16A 3P 400V</div>
+                    <div class="guest-product-price">285.00</div>
+                </div>
+
+                <div class="guest-product-card">
+                    <div class="guest-product-name">施耐德接触器 LC1D</div>
+                    <div class="guest-product-spec">25A 220V AC</div>
+                    <div class="guest-product-price">156.00</div>
+                </div>
+
+                <div class="guest-product-card">
+                    <div class="guest-product-name">ABB 小型断路器 S201</div>
+                    <div class="guest-product-spec">10A 1P C型</div>
+                    <div class="guest-product-price">42.00</div>
+                </div>
+
+                <div class="guest-product-card">
+                    <div class="guest-product-name">正泰时间继电器 JSS48A</div>
+                    <div class="guest-product-spec">220V AC</div>
+                    <div class="guest-product-price">68.00</div>
+                </div>
+
+                <div class="guest-product-card">
+                    <div class="guest-product-name">德力西空气开关 DZ47</div>
+                    <div class="guest-product-spec">32A 2P</div>
+                    <div class="guest-product-price">35.00</div>
+                </div>
+
+                <div class="guest-product-card">
+                    <div class="guest-product-name">欧姆龙中间继电器 MY2N</div>
+                    <div class="guest-product-spec">24V DC</div>
+                    <div class="guest-product-price">28.00</div>
+                </div>
+
+                <div class="guest-product-card">
+                    <div class="guest-product-name">施耐德按钮开关 XB2</div>
+                    <div class="guest-product-spec">红色 常开</div>
+                    <div class="guest-product-price">18.00</div>
+                </div>
+
+                <div class="guest-product-card">
+                    <div class="guest-product-name">西门子接触器 3TF</div>
+                    <div class="guest-product-spec">40A 220V</div>
+                    <div class="guest-product-price">198.00</div>
+                </div>
+
+                <div class="guest-product-card">
+                    <div class="guest-product-name">ABB 漏电保护器 DS201</div>
+                    <div class="guest-product-spec">16A 30mA</div>
+                    <div class="guest-product-price">125.00</div>
+                </div>
+
+                <div class="guest-product-card">
+                    <div class="guest-product-name">正泰交流接触器 NC1</div>
+                    <div class="guest-product-spec">18A 220V</div>
+                    <div class="guest-product-price">45.00</div>
+                </div>
+            </div>
+
+            <!-- 底部操作 -->
+            <div class="guest-footer">
+                <button class="exit-guest-btn" onclick="alert('退出访客模式')">
+                    退出访客模式
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的测试脚本
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('guestSearchInput');
+            const categoryFilter = document.getElementById('guestCategoryFilter');
+            const productList = document.getElementById('guestProductList');
+            const statsCount = document.getElementById('guestStatsCount');
+            
+            const allProducts = [
+                { name: '西门子断路器 3UA', spec: '16A 3P 400V', price: 285.00, category: '断路器' },
+                { name: '施耐德接触器 LC1D', spec: '25A 220V AC', price: 156.00, category: '接触器' },
+                { name: 'ABB 小型断路器 S201', spec: '10A 1P C型', price: 42.00, category: '断路器' },
+                { name: '正泰时间继电器 JSS48A', spec: '220V AC', price: 68.00, category: '继电器' },
+                { name: '德力西空气开关 DZ47', spec: '32A 2P', price: 35.00, category: '开关' },
+                { name: '欧姆龙中间继电器 MY2N', spec: '24V DC', price: 28.00, category: '继电器' },
+                { name: '施耐德按钮开关 XB2', spec: '红色 常开', price: 18.00, category: '开关' },
+                { name: '西门子接触器 3TF', spec: '40A 220V', price: 198.00, category: '接触器' },
+                { name: 'ABB 漏电保护器 DS201', spec: '16A 30mA', price: 125.00, category: '断路器' },
+                { name: '正泰交流接触器 NC1', spec: '18A 220V', price: 45.00, category: '接触器' }
+            ];
+            
+            function filterProducts() {
+                const searchQuery = searchInput.value.toLowerCase();
+                const category = categoryFilter.value;
+                
+                const filtered = allProducts.filter(product => {
+                    const matchesSearch = !searchQuery || 
+                        product.name.toLowerCase().includes(searchQuery) ||
+                        product.spec.toLowerCase().includes(searchQuery);
+                    const matchesCategory = !category || product.category === category;
+                    return matchesSearch && matchesCategory;
+                });
+                
+                renderProducts(filtered);
+                updateStats(filtered.length, allProducts.length);
+            }
+            
+            function renderProducts(products) {
+                if (products.length === 0) {
+                    productList.innerHTML = `
+                        <div class="guest-no-results">
+                            <svg class="guest-no-results-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <div class="guest-no-results-title">未找到相关商品</div>
+                            <div class="guest-no-results-text">请尝试其他关键词</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                productList.innerHTML = products.map(product => `
+                    <div class="guest-product-card">
+                        <div class="guest-product-name">${product.name}</div>
+                        <div class="guest-product-spec">${product.spec}</div>
+                        <div class="guest-product-price">${product.price.toFixed(2)}</div>
+                    </div>
+                `).join('');
+            }
+            
+            function updateStats(showing, total) {
+                if (showing === total) {
+                    statsCount.textContent = `共 ${total} 件商品`;
+                    statsCount.className = 'stats-count';
+                } else if (showing === 0) {
+                    statsCount.textContent = `未找到商品`;
+                    statsCount.className = 'stats-count no-results';
+                } else {
+                    statsCount.textContent = `找到 ${showing} 件商品`;
+                    statsCount.className = 'stats-count has-results';
+                }
+            }
+            
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(filterProducts, 300);
+            });
+            
+            categoryFilter.addEventListener('change', filterProducts);
+        });
+    </script>
+</body>
+</html>
