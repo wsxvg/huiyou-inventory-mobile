@@ -850,7 +850,7 @@ function exitGuestMode() {
     }
 }
 
-// 加载访客数据（公开数据，不需要密码）
+// 加载访客数据（自动使用密码解密，只显示公开信息）
 async function loadGuestData() {
     try {
         console.log('加载访客数据...');
@@ -882,16 +882,14 @@ async function loadGuestData() {
             console.log('从网络加载数据成功');
         }
         
-        // 使用默认密码解密（或者使用公开数据）
-        // 注意：实际应用中，访客数据应该是单独的公开文件
-        // 这里为了演示，我们尝试使用一个默认密码
-        const defaultPassword = 'guest123'; // 这应该是一个公开的默认密码
+        // 使用固定密码自动解密（访客模式不需要用户输入密码）
+        const guestPassword = 'huiyou';
         
         try {
-            const decryptedText = await decryptAESData(encryptedData.trim(), defaultPassword);
+            const decryptedText = await decryptAESData(encryptedData.trim(), guestPassword);
             const data = JSON.parse(decryptedText);
             
-            // 只提取访客可见的信息
+            // 只提取访客可见的信息（商品名称、规格、零售价）
             guestProducts = data.products.map(product => ({
                 name: product.name,
                 specification: product.specification || '',
@@ -904,18 +902,17 @@ async function loadGuestData() {
             
             console.log('访客数据加载完成，商品数量:', guestProducts.length);
         } catch (decryptError) {
-            // 如果解密失败，说明没有公开数据，创建模拟数据用于演示
-            console.log('无法解密数据，使用模拟数据');
+            console.error('解密失败:', decryptError);
+            // 解密失败时使用模拟数据
+            console.log('使用模拟数据');
             guestProducts = createMockGuestData();
             guestFilteredProducts = guestProducts;
-            
-            // 提取分类
             allCategories = [...new Set(guestProducts.map(p => p.category_name))];
         }
         
     } catch (error) {
         console.error('加载访客数据失败:', error);
-        // 使用模拟数据
+        // 加载失败时使用模拟数据
         guestProducts = createMockGuestData();
         guestFilteredProducts = guestProducts;
         allCategories = [...new Set(guestProducts.map(p => p.category_name))];
