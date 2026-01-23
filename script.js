@@ -806,24 +806,32 @@ async function enterGuestMode() {
     try {
         console.log('进入访客模式...');
         
-        // 尝试加载公开数据（不需要密码）
-        await loadGuestData();
-        
-        // 隐藏登录界面，显示访客模式界面
+        // 显示访客模式界面
         document.getElementById('passwordScreen').style.display = 'none';
         document.getElementById('guestMode').style.display = 'block';
         
+        // 显示加载状态
+        document.getElementById('guestProductList').innerHTML = '<div class="guest-loading">正在加载商品数据...</div>';
+        
         isGuestMode = true;
+        
+        // 加载真实数据
+        await loadGuestData();
         
         // 初始化访客模式
         setupGuestFilters();
         renderGuestProducts();
         updateGuestStats();
         
-        console.log('访客模式初始化完成');
+        console.log('访客模式初始化完成，商品数量:', guestProducts.length);
     } catch (error) {
         console.error('进入访客模式失败:', error);
-        showError('无法进入访客模式: ' + error.message);
+        document.getElementById('guestProductList').innerHTML = `
+            <div class="guest-no-results">
+                <div class="guest-no-results-title">数据加载失败</div>
+                <div class="guest-no-results-text">${error.message}</div>
+            </div>
+        `;
     }
 }
 
@@ -853,41 +861,47 @@ function exitGuestMode() {
 // 加载访客数据（自动使用密码解密，只显示公开信息）
 async function loadGuestData() {
     try {
-        console.log('加载访客数据...');
+        console.log('=== 开始加载访客数据 ===');
         
         // 尝试从缓存或网络加载数据
         let encryptedData;
         
         try {
+            console.log('尝试从缓存加载...');
             const cacheResponse = await fetch('encrypted_products.json', {
                 cache: 'force-cache'
             });
             
             if (cacheResponse.ok) {
                 encryptedData = await cacheResponse.text();
-                console.log('从缓存加载数据成功');
+                console.log('✓ 从缓存加载成功，数据长度:', encryptedData.length);
             } else {
-                throw new Error('缓存响应失败');
+                throw new Error('缓存响应失败: ' + cacheResponse.status);
             }
         } catch (cacheError) {
-            console.log('缓存加载失败，尝试网络请求');
+            console.log('缓存加载失败:', cacheError.message);
+            console.log('尝试从网络加载...');
             const timestamp = new Date().getTime();
             const networkResponse = await fetch(`encrypted_products.json?t=${timestamp}`);
             
             if (!networkResponse.ok) {
-                throw new Error('网络请求失败');
+                throw new Error('网络请求失败: ' + networkResponse.status);
             }
             
             encryptedData = await networkResponse.text();
-            console.log('从网络加载数据成功');
+            console.log('✓ 从网络加载成功，数据长度:', encryptedData.length);
         }
         
         // 使用固定密码自动解密（访客模式不需要用户输入密码）
         const guestPassword = 'huiyou';
+        console.log('开始解密数据...');
         
         try {
             const decryptedText = await decryptAESData(encryptedData.trim(), guestPassword);
+            console.log('✓ 解密成功，数据长度:', decryptedText.length);
+            
             const data = JSON.parse(decryptedText);
+            console.log('✓ JSON解析成功，商品数量:', data.products.length);
             
             // 只提取访客可见的信息（商品名称、规格、零售价）
             guestProducts = data.products.map(product => ({
@@ -900,22 +914,19 @@ async function loadGuestData() {
             allCategories = data.categories || [];
             guestFilteredProducts = guestProducts;
             
-            console.log('访客数据加载完成，商品数量:', guestProducts.length);
+            console.log('✓ 访客数据加载完成，商品数量:', guestProducts.length);
+            console.log('✓ 分类数量:', allCategories.length);
+            console.log('=== 访客数据加载成功 ===');
         } catch (decryptError) {
-            console.error('解密失败:', decryptError);
-            // 解密失败时使用模拟数据
-            console.log('使用模拟数据');
-            guestProducts = createMockGuestData();
-            guestFilteredProducts = guestProducts;
-            allCategories = [...new Set(guestProducts.map(p => p.category_name))];
+            console.error('✗ 解密失败:', decryptError);
+            console.error('错误详情:', decryptError.message);
+            throw new Error('数据解密失败，请检查密码是否正确');
         }
         
     } catch (error) {
-        console.error('加载访客数据失败:', error);
-        // 加载失败时使用模拟数据
-        guestProducts = createMockGuestData();
-        guestFilteredProducts = guestProducts;
-        allCategories = [...new Set(guestProducts.map(p => p.category_name))];
+        console.error('✗ 加载访客数据失败:', error);
+        console.error('错误详情:', error.message);
+        throw error; // 抛出错误，让 enterGuestMode 处理
     }
 }
 
